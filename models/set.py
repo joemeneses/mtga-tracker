@@ -1,5 +1,6 @@
 import re
-from models.card import Card
+import models.card as mcard
+from models.card import GameCard
 
 
 class Set(object):
@@ -31,6 +32,9 @@ class Pool(object):
     def __repr__(self):
         return "<Pool {}: {} cards>".format(self.pool_name, len(self.cards))
 
+    def count(self, mtga_id):
+        return len([card for card in self.cards if card.mtga_id == mtga_id])
+
     def group_cards(self):
         grouped = {}
         for card in self.cards:
@@ -53,7 +57,7 @@ class Pool(object):
     def transfer_card_to(self, card, other_pool):
         # TODO: make this atomic, somehow?
         res = card
-        if not isinstance(card, Card):  # allow you to pass in cards or ids or searches
+        if not isinstance(card, mcard.Card):  # allow you to pass in cards or ids or searches
             res = self.find_one(card)
         self.cards.remove(res)
         other_pool.cards.append(res)
@@ -79,7 +83,9 @@ class Pool(object):
         keyword_as_str = str(id_or_keyword)
         try:
             keyword_as_int = int(id_or_keyword)
-        except ValueError:
+            if keyword_as_int < 10000:
+                keyword_as_int = None
+        except (ValueError, TypeError):
             pass
         results = []
         for card in self.cards:
@@ -92,3 +98,45 @@ class Pool(object):
             if keyword_clean in card.name:
                 results.append(card)
         return results
+
+
+class Zone(Pool):
+    def __init__(self, pool_name, zone_id=-1):
+        super().__init__(pool_name)
+        self.zone_id = zone_id
+
+    def match_game_id_to_card(self, instance_id, card_id):
+        for card in self.cards:
+            assert isinstance(card, GameCard)
+            if card.mtga_id == card_id:
+                if card.game_id != -1 and card.game_id != instance_id:
+                    if self.count(card_id) >= 4 and not card.is_basic():
+                        # TODO: derp, you're allowed more than one of each card, lol
+                        raise Exception("WHOA. tried to match {} to iid {}, but already have 4 {}".format(
+                            str(card_id), str(instance_id), str(card)))
+                card.game_id = instance_id
+            elif card.game_id == instance_id:
+                if card.mtga_id != -1 and card.mtga_id != card_id:
+                    raise Exception("WHOA. tried to match iid {} to {}, but already has card {}".format(
+                        str(instance_id), str(card_id), str(card.mtga_id)))
+                card.transform_to(card_id)
+
+
+class Deck(Pool):
+
+    def __init__(self, pool_name, deck_id):
+        super().__init__(pool_name)
+        self.deck_id = deck_id
+
+    def generate_library(self):
+        library = Library(self.pool_name, self.deck_id, -1)
+        for card in self.cards:
+            game_card = mcard.GameCard(card.name, card.set, card.set_number, card.mtga_id, -1)
+            library.cards.append(game_card)
+        return library
+
+
+class Library(Deck, Zone):
+    def __init__(self, pool_name, deck_id, zone_id=-1):
+        super().__init__(pool_name, deck_id)
+        self.zone_id = zone_id
