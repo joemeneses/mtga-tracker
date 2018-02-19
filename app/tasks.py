@@ -1,11 +1,13 @@
 import json
 import pprint
+
+import time
+
 import util
 import app.dispatchers as dispatchers
 
 
 def block_watch_task(in_queue, out_queue):
-    import app.mtga_app as mtga_app
     while True:
         block_recieved = in_queue.get()
         block_lines = block_recieved.split("\n")
@@ -46,10 +48,6 @@ def dense_log(json_recieved):
             output = "{}\n{}\n{}".format(pprint.pformat(cards), "-" * 30, pprint.pformat(json_recieved))
             filename = "card"
             mtga_app.mtga_watch_app.make_logchunk_file(filename, output, False)
-        else:
-            output = "{}\n{}\n{}".format(pprint.pformat(cards), "-" * 30, pprint.pformat(json_recieved))
-            filename = "nocard"
-            mtga_app.mtga_watch_app.make_logchunk_file(filename, output, False)
 
 
 def check_for_client_id(blob):
@@ -68,7 +66,6 @@ def json_blob_reader_task(in_queue, out_queue):
             continue  # don't double fire
         dense_log(json_recieved)
         check_for_client_id(json_recieved)
-
         dispatchers.dispatch_blob(json_recieved)
 
         last_blob = json_recieved

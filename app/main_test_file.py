@@ -1,9 +1,6 @@
 import threading
-
-import tailer
-
 from app import tasks, queues
-from app.mtga_app import check_game_state_forever, output_log
+from app.mtga_app import check_game_state_forever
 
 if __name__ == "__main__":
 
@@ -16,9 +13,12 @@ if __name__ == "__main__":
     json_watch_process = threading.Thread(target=tasks.json_blob_reader_task, args=(queues.json_blob_queue, queues.json_blob_queue, ))
     json_watch_process.start()
     current_block = ""
-    for line in tailer.follow(open(output_log)):
-        if line.strip() == "":
-            queues.block_read_queue.put(current_block)
-            current_block = ""
-        else:
-            current_block += line.strip() + "\n"
+    # for line in tailer.follow(open(output_log)):
+    with open("../example_logs/single_game.txt", 'r') as rf:
+        all_lines = rf.readlines()
+        for idx, line in enumerate(all_lines):
+            if line.strip() == "":
+                queues.block_read_queue.put(current_block)
+                current_block = ""
+            else:
+                current_block += line.strip() + "\n"

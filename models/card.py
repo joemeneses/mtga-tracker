@@ -22,9 +22,10 @@ class Card(object):
 
 class GameCard(Card):
 
-    def __init__(self, name, set, set_number, mtga_id, game_id=-1):
+    def __init__(self, name, set, set_number, mtga_id, owner_seat_id, game_id=-1):
         super().__init__(name, set, set_number, mtga_id)
         self.game_id = game_id
+        self.owner_seat_id = owner_seat_id
 
     def __repr__(self):
         if self.mtga_id != -1:

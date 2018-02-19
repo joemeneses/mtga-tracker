@@ -6,6 +6,8 @@ import app.queues as queues
 import app.tasks as tasks
 import time
 
+from app.queues import block_read_queue, json_blob_queue
+
 appdata_roaming = os.getenv("APPDATA")
 wotc_locallow_path = os.path.join(appdata_roaming, "..", "LocalLow", "Wizards Of The Coast", "MTGA")
 output_log = os.path.join(wotc_locallow_path, "output_log.txt")
@@ -44,10 +46,11 @@ def check_game_state_forever():
                 print("{} hand: {}".format(mtga_watch_app.game.hero.player_name, mtga_watch_app.game.hero.hand))
                 print("{}  lib: {}".format(mtga_watch_app.game.hero.player_name, mtga_watch_app.game.hero.library))
                 print("~!~"*30)
+                print("queue_size: {} / {}".format(block_read_queue.qsize(), json_blob_queue.qsize()))
+                print("~!~"*30)
                 print("{} hand: {}".format(mtga_watch_app.game.opponent.player_name, mtga_watch_app.game.opponent.hand))
                 print("{}  lib: {}".format(mtga_watch_app.game.opponent.player_name, mtga_watch_app.game.opponent.library))
                 print("~!~"*30)
-                time.sleep(4)
             else:
                 print("check_game_state: no data yet, but {} :(".format(id(mtga_watch_app.game)))
         time.sleep(1)

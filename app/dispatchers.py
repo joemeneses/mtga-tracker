@@ -4,6 +4,8 @@ import app.parsers as parsers
 
 
 # HIGHEST LEVEL DISPATCHERS: any json blob
+
+
 def dispatch_blob(blob):
     if "method" in blob and "jsonrpc" in blob:
         dispatch_jsonrpc_method(blob)
@@ -58,6 +60,8 @@ def dispatch_client_to_gre(blob):
                      "ClientMessageType_ConnectReq"]
     if message_type in dont_care_types:
         pass
+    elif message_type == "ClientMessageType_MulliganResp":
+        parsers.parse_mulligan_response(client_message)
     elif message_type in unknown_types:
         # TODO: log ?
         pass
