@@ -41,20 +41,21 @@ mtga_watch_app = MTGAWatchApplication()
 
 def check_game_state_forever():
     while(1):
-        with mtga_watch_app.game_lock:
-            if mtga_watch_app.game and mtga_watch_app.game.hero:
-                print("~!~"*30)
-                print("{} hand: {}".format(mtga_watch_app.game.hero.player_name, mtga_watch_app.game.hero.hand))
-                print("{}  lib: {}".format(mtga_watch_app.game.hero.player_name, mtga_watch_app.game.hero.library))
-                print("~!~"*30)
-                print("queue_size: {} / {}".format(block_read_queue.qsize(), json_blob_queue.qsize()))
-                print("~!~"*30)
-                print("{} hand: {}".format(mtga_watch_app.game.opponent.player_name, mtga_watch_app.game.opponent.hand))
-                print("{}  lib: {}".format(mtga_watch_app.game.opponent.player_name, mtga_watch_app.game.opponent.library))
-                print("~!~"*30)
+        if mtga_watch_app.game and mtga_watch_app.game.hero:
+            my_hand = [c for c in mtga_watch_app.game.hero.hand.cards]
+            my_exile = [c for c in mtga_watch_app.game.hero.exile.cards if c.owner_seat_id == mtga_watch_app.game.hero.seat]
+            my_limbo = [c for c in mtga_watch_app.game.hero.limbo.cards if c.owner_seat_id == mtga_watch_app.game.hero.seat]
+            my_battl = [c for c in mtga_watch_app.game.hero.battlefield.cards if c.owner_seat_id == mtga_watch_app.game.hero.seat]
+            print("~!~"*30)
+            print("{} hand : {} {}".format(mtga_watch_app.game.hero.player_name, len(my_hand), my_hand))
+            print("{} exile: {} {}".format(mtga_watch_app.game.hero.player_name, len(my_exile), my_exile))
+            print("{} limbo: {} {}".format(mtga_watch_app.game.hero.player_name, len(my_limbo), my_limbo))
+            print("{} battl: {} {}".format(mtga_watch_app.game.hero.player_name, len(my_battl), my_battl))
+            print("{} librr: {}".format(mtga_watch_app.game.hero.player_name, mtga_watch_app.game.hero.library))
+            print("~!~"*30)
+            print("queue_size: {} / {}".format(block_read_queue.qsize(), json_blob_queue.qsize()))
+            print("~!~"*30)
+            with mtga_watch_app.game_lock:
                 if mtga_watch_app.game.hero.hand.cards:
-                    mtga_watch_app.game.hero.calculate_draw_odds()
-            else:
-                print("check_game_state: no data yet, but {} :(".format(id(mtga_watch_app.game)))
+                        mtga_watch_app.game.hero.calculate_draw_odds(mtga_watch_app.game.ignored_iids)
         time.sleep(1)
-
