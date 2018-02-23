@@ -1,10 +1,7 @@
 import pprint
-
 import time
-
-from models.card import GameCard
-from models.game import Game, Player
 import util
+from models.game import Game, Player
 from models.set import Zone
 
 
@@ -150,6 +147,7 @@ def parse_match_complete(blob):
     # MatchGameRoomStateType_MatchCompleted
     pass
 
+
 def parse_match_playing(blob):
     # MatchGameRoomStateType_Playing
     import app.mtga_app as mtga_app
@@ -201,12 +199,3 @@ def parse_match_playing(blob):
             hero.original_deck = mtga_app.mtga_watch_app.intend_to_join_game_with
         mtga_app.mtga_watch_app.game = Game(hero, opponent, shared_battlefield, shared_exile, shared_limbo,
                                             shared_stack)
-
-
-""" simple map: take keys of a dict, and keep digging until you find a callable
-
-# I already realized this won't work, but let's just track stuff here til we have a better solution"""
-# log_handler_map = {
-#     ["matchGameRoomStateChangedEvent"]: parse_gameroomstatechangedevent,
-# }
-

@@ -1,5 +1,9 @@
-import threading
+import sys, os
+path_to_root = os.path.abspath(os.path.join(__file__, "..", ".."))
+print(path_to_root)
+sys.path.append(path_to_root)
 
+import threading
 import functools
 import tailer
 

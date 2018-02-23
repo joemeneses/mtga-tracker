@@ -27,7 +27,19 @@ class Card(object):
             if color_key in self.cost:
                 colors.append(COLORMAP[color_key])
         if not colors:
-            colors = ["Colorless"]
+            if self.card_type == "Basic Land":
+                if "Plains" in self.pretty_name:
+                    colors = ["White"]
+                if "Swamp" in self.pretty_name:
+                    colors = ["Black"]
+                if "Forest" in self.pretty_name:
+                    colors = ["Green"]
+                if "Mountain" in self.pretty_name:
+                    colors = ["Red"]
+                if "Island" in self.pretty_name:
+                    colors = ["Blue"]
+            if not colors:
+                colors = ["Colorless"]
         return colors
 
     def is_basic(self):
