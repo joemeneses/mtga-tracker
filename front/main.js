@@ -3,6 +3,7 @@ const app = electron.app
 const BrowserWindow = electron.BrowserWindow
 const path = require('path')
 const console = require('console');
+const request = require('request');
 
 
 /*************************************************************
@@ -16,8 +17,8 @@ const PY_MODULE = 'main' // without .py suffix
 let pyProc = null
 let pyPort = null
 
-//let debug = true;
 let debug = false;
+let no_server = false;
 global.debug = debug;
 
 const guessPackaged = () => {
@@ -48,29 +49,21 @@ port = selectPort()
 
 const createPyProc = () => {
   let script = getScriptPath()
-  console.log(script)
 
   if (guessPackaged()) {
     pyProc = require('child_process').execFile(script, [port])
   } else {
-    console.log("starting: ", getPyBinPath(), [script])
     pyProc = require('child_process').spawn(getPyBinPath(), [script], {shell: true})
   }
 
   if (pyProc != null) {
-    console.log(pyProc)
     console.log('child process success on port ' + port)
   }
 }
 
-const exitPyProc = () => {
-  pyProc.kill()
-  pyProc = null
-  pyPort = null
+if (!no_server) {
+    app.on('ready', createPyProc)
 }
-
-app.on('ready', createPyProc)
-app.on('will-quit', exitPyProc)
 
 
 /*************************************************************
@@ -120,7 +113,22 @@ app.on('ready', createWindow)
 
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {
+   if (!no_server) {
+       request.get({
+        url: "http://localhost:8080/die",
+        json: true,
+        headers: {'User-Agent': 'request'}
+      }, (err, res, data) => {
+        console.log("doop");
+        console.log(err, res, data)
+        pyProc.kill()
+        pyProc = null
+        pyPort = null
+        app.quit()
+      })
+   } else {
     app.quit()
+   }
   }
 })
 
