@@ -64,7 +64,7 @@ def _random_string():
     return ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(10))
 
 
-def post_random_game(winner=None, loser=None):
+def post_random_game(winner=None, loser=None, winner_id=None, loser_id=None):
     game = copy.deepcopy(_game_shell)
     game["gameID"] = _random_string()
     if winner:
@@ -72,6 +72,10 @@ def post_random_game(winner=None, loser=None):
         game["players"][0]["name"] = winner
     if loser:
         game["players"][1]["name"] = loser
+    if winner_id:
+        game["players"][0]["userID"] = winner_id
+    if loser_id:
+        game["players"][1]["userID"] = loser_id
     return post(url + "/game", post_json=game)
 
 
@@ -85,6 +89,10 @@ def get_all_games_page(page, per_page):
 
 def get_user_games(user, page=1, per_page=10):
     return get(url + "/games/user/{}?debug_password={}&page={}&per_page={}".format(user, staging_debug_password, page, per_page))
+
+
+def get_user_id_games(user_id, page=1, per_page=10):
+    return get(url + "/games/userID/{}?debug_password={}&page={}&per_page={}".format(user_id, staging_debug_password, page, per_page))
 
 
 @pytest.fixture
@@ -148,6 +156,32 @@ def test_get_users_games(any_entries_5_or_more):
     assert up_to_2 != up_to_4
     [all_id_set.add(i["gameID"]) for i in up_to_4["docs"]]
     assert len(all_id_set) == 4
+
+
+def test_get_users_games_by_user_id(any_entries_5_or_more):
+    random_user_id = _random_string()
+    user_games = get_user_id_games(random_user_id)
+    assert(len(user_games["docs"]) == 0)
+    post_random_game(winner_id=random_user_id)
+    post_random_game(winner_id=random_user_id)
+    user_games = get_user_id_games(random_user_id)
+    assert len(user_games["docs"]) == 2
+
+    post_random_game(winner_id=random_user_id)
+    post_random_game(winner_id=random_user_id)
+    user_games = get_user_id_games(random_user_id)
+    assert len(user_games["docs"]) == 4
+
+    all_id_set = set()
+    up_to_2 = get_user_id_games(random_user_id, 1, 2)
+    assert len(up_to_2["docs"]) == 2
+    [all_id_set.add(i["gameID"]) for i in up_to_2["docs"]]
+    up_to_4 = get_user_id_games(random_user_id, 2, 2)
+    assert len(up_to_4["docs"]) == 2
+    assert up_to_2 != up_to_4
+    [all_id_set.add(i["gameID"]) for i in up_to_4["docs"]]
+    assert len(all_id_set) == 4
+
 
 @pytest.mark.dev
 def test_post_game(any_entries_5_or_more):

@@ -130,15 +130,16 @@ def get_game_by_gid(gid):
 
 def paranoia_backup():
     game_count = int(get_game_count())
-    pages = int(math.ceil((game_count / 50)))
+    pages = int(math.ceil((game_count / 100)))
     print("need to get {} pages".format(pages))
     now = datetime.datetime.now()
     logname = now.strftime("paranoia/%m-%d-%Y_%H-%M_backup.json")
     all_docs = []
     for page in range(1, pages + 1):
-        new_docs = get_all_games_page(page, 50)["docs"]
+        new_docs = get_all_games_page(page, 100)["docs"]
         print(new_docs)
         all_docs += new_docs
+    os.makedirs('paranoia')
     with open(logname, 'w') as wf:
         json.dump({"all_docs": all_docs}, wf)
 

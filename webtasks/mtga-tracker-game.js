@@ -128,10 +128,16 @@ server.get('/games/user/:username', (req, res, next) => {
   })
 })
 
-// TODO: uncovered!
+// covered: test_get_user_id_games
 server.get('/games/userID/:userID', (req, res, next) => {
+  console.log("games/userID/" + JSON.stringify(req.params))
+  if (req.query.per_page) {
+    var per_page = parseInt(req.query.per_page)
+  } else {
+    var per_page = 10;
+  }
   const { MONGO_URL, DEBUG_PASSWORD, DATABASE} = req.webtaskContext.secrets;
-  const { debug_password } = req.query;
+  const { debug_password, page = 1} = req.query;
   if (debug_password != DEBUG_PASSWORD) {
     res.status(400).send({error: "debug password incorrect"})
     return
@@ -140,11 +146,20 @@ server.get('/games/userID/:userID', (req, res, next) => {
     const { userID } = req.params ;
     if (connectErr) return next(connectErr);
     let collection = client.db(DATABASE).collection(gameCollection)
-    let cursor = collection.find({'players.userID': userID}, {limit: 5});  // hard-limit to 5 records for example
-    cursor.toArray((cursorErr, docs) => {
-      if (cursorErr) return next(cursorErr);
-      res.status(200).send(docs);
-      client.close()
+    let cursor = collection.find({'players.userID': userID});  // hard-limit to 5 records for example
+    cursor.count(null, null, (err, count) => {
+      let numPages = Math.ceil(count / per_page);
+      let docCursor = cursor.skip((page - 1) * per_page).limit(per_page);
+
+      docCursor.toArray((cursorErr, docs) => {
+        if (cursorErr) return next(cursorErr);
+        res.status(200).send({
+          totalPages: numPages,
+          page: page,
+          docs: docs
+        });
+        client.close()
+      })
     })
   })
 })
